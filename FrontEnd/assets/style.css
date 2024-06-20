@@ -136,6 +136,7 @@ li:hover {
 .filter button {
 	background-color: white;
 	border-color: #1D6154;
+	border: solid 1px;
 	border-radius: 20px;
 	font-size: 17.6px;
 	font-family: 'Syne';
@@ -150,11 +151,7 @@ li:hover {
 	color: white;
 	font-weight: 700;
 }
-.filter button:active {
-	background-color: #1D6154;
-	color: white;
-	font-weight: 700;
-}
+
 .gallery {
 	width: 100%;
 	display: grid;
