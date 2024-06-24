@@ -43,8 +43,8 @@ async function fetchAndGenerateGallery() {
         button.classList.add('filter-btn');
 
         button.addEventListener('click', () => {
-            const filteredWorks = category.id === 0 ? works : works.filter(work => work.categoryId === category.id);
-            generateGallery(filteredWorks);
+            const filterWorks = category.id === 0 ? works : works.filter(work => work.categoryId === category.id);
+            generateGallery(filterWorks);
         });
 
         return button;
