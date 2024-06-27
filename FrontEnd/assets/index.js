@@ -1,31 +1,45 @@
 async function fetchAndGenerateGallery() {
-    const response = await fetch('http://localhost:5678/api/works');
-    const works = await response.json();
-
-    function generateGallery(works) {
-        const sectionGallery = document.querySelector(".gallery");
-
-        sectionGallery.innerHTML = '';
-
-        for (let i = 0; i < works.length; i++) {
-            const photo = works[i];
-            const figureGallery = document.createElement("figure");
-
-            const imageUrlElement = document.createElement("img");
-            imageUrlElement.src = photo.imageUrl;
-            imageUrlElement.alt = photo.title;
-
-            const titleElement = document.createElement("figcaption");
-            titleElement.innerText = photo.title;
-
-            figureGallery.appendChild(imageUrlElement);
-            figureGallery.appendChild(titleElement);
-            sectionGallery.appendChild(figureGallery);
-        }
-    }
-
+    const works = await fetchWorks();
     generateGallery(works);
 
+    const categories = await fetchCategories();
+    setupFilterButtons(categories, works);
+}
+
+fetchAndGenerateGallery();
+
+async function fetchWorks() {
+    const response = await fetch('http://localhost:5678/api/works');
+    return response.json();
+}
+
+async function fetchCategories() {
+    const response = await fetch('http://localhost:5678/api/categories');
+    return response.json();
+}
+
+const generateGallery = (works) => {
+    document.querySelector(".gallery").innerHTML = works.map(work => `
+        <figure>
+            <img src="${work.imageUrl}" alt="${work.title}">
+            <figcaption>${work.title}</figcaption>
+        </figure>`).join('');
+};
+function createButton(category, works) {
+    const button = document.createElement('button');
+    button.textContent = category.name;
+    button.dataset.id = category.id;
+    button.classList.add('filter-btn');
+
+    button.addEventListener('click', () => {
+        const filteredWorks = category.id === 0 ? works : works.filter(work => work.categoryId === category.id);
+        generateGallery(filteredWorks);
+    });
+
+    return button;
+}
+
+function setupFilterButtons(categories, works) {
     const divFilter = document.createElement('div');
     divFilter.classList.add('filter');
 
@@ -33,30 +47,12 @@ async function fetchAndGenerateGallery() {
     const divGallery = sectionPortfolio.querySelector('.gallery');
     sectionPortfolio.insertBefore(divFilter, divGallery);
 
-    const responses = await fetch('http://localhost:5678/api/categories');
-    const categories = await responses.json();
-
-    function createButton(category) {
-        const button = document.createElement('button');
-        button.textContent = category.name;
-        button.dataset.id = category.id;
-        button.classList.add('filter-btn');
-
-        button.addEventListener('click', () => {
-            const filterWorks = category.id === 0 ? works : works.filter(work => work.categoryId === category.id);
-            generateGallery(filterWorks);
-        });
-
-        return button;
-    }
-
-    const allButton = createButton({ id: 0, name: 'Tous' });
+    const allButton = createButton({ id: 0, name: 'Tous' }, works);
     divFilter.appendChild(allButton);
 
     categories.forEach(category => {
-        const filterBtn = createButton(category);
+        const filterBtn = createButton(category, works);
         divFilter.appendChild(filterBtn);
     });
 }
 
-fetchAndGenerateGallery();
