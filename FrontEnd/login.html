@@ -29,15 +29,14 @@
             <form id="loginForm">
 
                 <label for="email">E-mail</label>
-                <input type="email" name="email" id="email" placeholder="sophie.bluel@test.tld"
-                    value="sophie.bluel@test.tld" required>
-                <p class="loginError"></p>
+                <input type="email" name="email" id="email" required>
+                <p class="loginError error"></p>
 
                 <label for="password">Mot de Passe</label>
-                <input type="password" id="password" name="password" min="4" max="15" value="S0phie" required>
-                <p class="passwordError"></p>
+                <input type="password" id="password" name="password" min="4" max="15" required>
+                <p class="passwordError error"></p>
 
-                <input type="submit" value="Se connecter">
+                <input type="submit" id="submit" value="Se connecter">
             </form>
             <p><a class="forgotPassword" href="#">Mot de passe oublié</a></p>
         </section>
