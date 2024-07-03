@@ -113,7 +113,7 @@ async function openModal() {
             <h3>Galerie photo</h3>
             <div id="photoList">
                 ${works.map(work => `
-                    <div class="thumbnail">
+                    <div class="miniature">
                         <img src="${work.imageUrl}" alt="${work.title}">
                         <button class="delete-photo" data-id="${work.id}">
                             <i class="fa fa-trash"></i>
@@ -142,30 +142,6 @@ async function openModal() {
         }
     });
 
-    document.querySelector('#addPhoto').addEventListener('submit', (event) => {
-        event.preventDefault();
-        const newImage = document.querySelector('#newImage').files[0];
-        if (newImage) {
-            console.log('Nouvelle image ajoutée:', newImage);
-        }
-    });
-
-    document.querySelectorAll('.delete-photo').forEach(button => {
-        button.addEventListener('click', async (event) => {
-            const photoId = event.target.closest('button').dataset.id;
-            await deletePhoto(photoId);
-            event.target.closest('.thumbnail').remove();
-        });
-    });
 }
 
-async function deletePhoto(photoId) {
-    const response = await fetch(`http://localhost:5678/api/works/${photoId}`, {
-        method: 'DELETE',
-    });
-    if (response.ok) {
-        console.log(`Photo ${photoId} supprimée`);
-    } else {
-        console.error(`Erreur lors de la suppression de la photo ${photoId}`);
-    }
-}
+
