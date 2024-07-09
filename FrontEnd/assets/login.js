@@ -34,22 +34,21 @@ document.addEventListener('DOMContentLoaded', () => {
                   'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                  email: email,
-                  password: password,
+                  email,
+                  password,
               })
           });
 
           const result = await response.json();
 
           if (response.ok) {
-              console.log('Connexion réussie', result);
-              localStorage.setItem('isLoggedIn', 'true');
+              localStorage.setItem('token', result.token);
               window.location.href = 'index.html';
           } else {
               loginError.textContent = 'Erreur de connexion: Veuillez réessayer. ';
           }
       } catch (error) {
-          loginError.textContent = 'Erreur de réseau: ' + error.message;
+          loginError.textContent = `Erreur de réseau: ${error.message}`;
       }
   });
 });
