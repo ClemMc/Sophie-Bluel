@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token') ? localStorage.getItem('token') : false;
+    console.log('Token:', token);
     await init();
 
     if (token) {
@@ -10,9 +11,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function init() {
     const works = await fetchWorks();
+    console.log('Works:', works);
     generateGallery(works);
 
     const categories = await fetchCategories();
+    console.log('Categories:', categories);
     setupFilterButtons(categories, works);
 }
 
@@ -63,6 +66,8 @@ function setupFilterButtons(categories, works) {
         const filterBtn = createButton(category, works);
         divFilter.appendChild(filterBtn);
     });
+
+    console.log('Filter buttons set up.');
 }
 
 function editMode() {
@@ -153,6 +158,7 @@ async function openModal() {
             const photoId = event.currentTarget.dataset.id;
             await deletePhoto(photoId);
             document.querySelector(`.miniature[data-id="${photoId}"]`).remove();
+            document.querySelector(`.gallery[data-id="${photoId}"]`).remove();
         });
     });
 }
@@ -162,44 +168,46 @@ function openAddPhotoModal() {
     addPhotoModal.id = 'addPhotoModal';
     addPhotoModal.classList.add('modal');
     addPhotoModal.innerHTML = `
-            <div class="modal-content">
-                <i id="previewModal" class="fa-solid fa-arrow-left"></i>
-                <span class="close">&times;</span>
-                <h3>Ajout photo</h3>
-                <div id="imageContainer">
+        <div class="modal-content">
+            <i id="previewModal" class="fa-solid fa-arrow-left"></i>
+            <span class="close">&times;</span>
+            <h3>Ajout photo</h3>
+            <form id="uploadPhoto" enctype="multipart/form-data">
+            <div id="imageContainer">
+                <div id="previewContainer">
                     <i class="fa-solid fa-image"></i>
                     <div id="inputFile">
                         <label for="filetoUpload" class="fileLabel">
                         <span>+ Ajouter une photo</span>
-                        <input type="file" id="filetoUpload" name="image" accept="image/png, image/jpeg"
-                        class="file-input">
+                        <input type="file" id="filetoUpload" name="image" accept="image/png, image/jpeg" class="file-input">
                         </label>
                     </div>
+                    
                     <span class="filesize">jpg, png : 4mo max</span>
-                    <span id="errorImg"></span>
+                    <span id="errorImg" class="errormsg"></span>
                 </div>
-                <div class="inputEdit" id="addTitle">
-                    <label for="title">Titre</label>
-                    <input type="text" name="title" id="title" class="inputCss" required>
-                    <span id="ErrorTitleSubmit" class="errormsg"></span>
-                </div>
-
-                <div class=" inputEdit" id="addCategory">
-                    <label for="category">Catégorie</label>
-                    <select name="category" id="category" data-id="" class="inputCss"></select>
-                    <span id="ErrorCategorySubmit" class="errormsg"></span>
-                </div>
-                <hr class="hr" />
-                <form id="addPhoto">
-                    <input type="submit" value="Valider">
-                </form>
             </div>
+            <div class="inputEdit" id="addTitle">
+                <label for="title">Titre</label>
+                <input type="text" name="title" id="title" class="inputCss" required>
+                <span id="ErrorTitleSubmit" class="errormsg"></span>
+            </div>
+
+            <div class="inputEdit" id="addCategory">
+                <label for="category">Catégorie</label>
+                <select name="category" id="category" data-id="" class="inputCss"></select>
+                <span id="ErrorCategorySubmit" class="errormsg"></span>
+            </div>
+            <hr class="hr" />
+                <input type="submit" value="Valider" id="submitPhoto">
+            </form>
+        </div>
     `;
 
     document.body.appendChild(addPhotoModal);
     addPhotoModal.style.display = 'block';
 
-    // Fermer la modal
+    allCategories();
 
     function closeModals() {
         addPhotoModal.style.display = 'none';
@@ -217,60 +225,168 @@ function openAddPhotoModal() {
     addPhotoModal.querySelector('#previewModal').addEventListener('click', () => {
         addPhotoModal.style.display = 'none';
         document.body.removeChild(addPhotoModal);
-    })
-
+    });
 
     window.addEventListener('click', (event) => {
         if (event.target === addPhotoModal || event.target === document.getElementById('editModal')) {
             closeModals();
         }
     });
- 
 
-    // Gérer la soumission du formulaire pour ajouter une photo
+    document.querySelector('#filetoUpload').addEventListener('change', imagePreview);
+    
     document.querySelector('#uploadPhoto').addEventListener('submit', async (event) => {
         event.preventDefault();
+    
+        const errorImg = document.getElementById('errorImg');
+        const errorTitleSubmit = document.getElementById('ErrorTitleSubmit');
+        const errorCategorySubmit = document.getElementById('ErrorCategorySubmit');
+    
+        if (errorImg) {
+            errorImg.textContent = '';
+        }
+        if (errorTitleSubmit) {
+            errorTitleSubmit.textContent = '';
+        }
+        if (errorCategorySubmit) {
+            errorCategorySubmit.textContent = '';
+        }
+    
         const title = document.querySelector('#title').value;
-        const imageUrl = document.querySelector('#imageUrl').value;
-        await addPhoto({ title, imageUrl });
-        addPhotoModal.style.display = 'none';
-        document.body.removeChild(addPhotoModal);
+        const category = document.querySelector('#category').value;
+        const fileInput = document.querySelector('#filetoUpload');
+        const image = fileInput ? fileInput.files[0] : null;
+        console.log(fileInput)
+        let valid = true;
+    
+        if (!title) {
+            if (errorTitleSubmit) {
+                errorTitleSubmit.textContent = 'Veuillez saisir un titre.';
+            }
+            valid = false;
+        }
+    
+        if (!category) {
+            if (errorCategorySubmit) {
+                errorCategorySubmit.textContent = 'Veuillez sélectionner une catégorie.';
+            }
+            valid = false;
+        }
+    
+        if (!image) {
+            if (errorImg) {
+                errorImg.textContent = 'Veuillez sélectionner une image.';
+            }
+            valid = false;
+        }
+    
+        if (!valid) {
+            return;
+        }
+    
+        await addPhoto({ title, category, image });
+    
+        const addPhotoModal = document.getElementById('addPhotoModal');
+        if (addPhotoModal) {
+            addPhotoModal.style.display = 'none';
+            document.body.removeChild(addPhotoModal);
+        }
+    });
+    
+    
+}
+
+
+function imagePreview(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('previewContainer');
+    const inputFile = document.getElementById('inputFile');
+    const fileSizeInfo = document.querySelector('.filesize');
+    const errorImg = document.getElementById('errorImg');
+    
+    previewContainer.innerHTML = '';
+
+    if (file) {
+        if (file.size > 4 * 1024 * 1024) {
+            errorImg.textContent = 'Le fichier dépasse la taille maximale de 4Mo.';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            previewContainer.appendChild(img);
+
+            inputFile.style.display = 'none';
+            fileSizeInfo.style.display = 'none';
+            errorImg.textContent = '';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+async function allCategories() {
+    const categories = await fetchCategories();
+    const categorySelect = document.getElementById('category');
+
+    const emptyOption = document.createElement('option');
+    emptyOption.value = '';
+    emptyOption.textContent = '';
+    categorySelect.appendChild(emptyOption);
+
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        categorySelect.appendChild(option);
     });
 }
 
 async function addPhoto(photoData) {
-    const response = await fetch('http://localhost:5678/api/works', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(photoData)
-    });
+    const formData = new FormData();
+    formData.append('title', photoData.title);
+    formData.append('category', photoData.category);
+    formData.append('image', photoData.image);
+    console.log('formData')
+    try {
+        const response = await fetch('http://localhost:5678/api/works', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
 
-    if (response.ok) {
-        console.log('Photo ajoutée avec succès');
-        // Rechargez la galerie pour afficher la nouvelle photo
-        const works = await fetchWorks();
-        generateGallery(works);
-    } else {
-        console.error('Erreur lors de l\'ajout de la photo');
+        if (response.ok) {
+            const works = await fetchWorks();
+            generateGallery(works);
+        } else {
+            console.error('Erreur lors de l\'ajout de la photo');
+            const errorMsg = await response.text();
+            console.error('Message d\'erreur:', errorMsg);
+        }
+    } catch (error) {
+        console.error('Erreur de connexion:', error);
     }
 }
 
-
 async function deletePhoto(photoId) {
-    // Logique pour supprimer la photo par ID
-    const response = await fetch(`http://localhost:5678/api/works/${photoId}`, {
-        method: 'DELETE',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-    });
+    try {
+        const response = await fetch(`http://localhost:5678/api/works/${photoId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+        });
 
-    if (response.ok) {
-        console.log(`Photo ${photoId} supprimée`);
-    } else {
-        console.error(`Erreur lors de la suppression de la photo ${photoId}`);
+        if (response.ok) {
+        } else {
+            console.error(`Erreur lors de la suppression de la photo ${photoId}`);
+            const errorMsg = await response.text();
+            console.error('Message d\'erreur:', errorMsg);
+        }
+    } catch (error) {
+        console.error('Erreur de connexion:', error);
     }
 }
