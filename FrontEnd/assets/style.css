@@ -493,11 +493,9 @@ footer nav ul {
     font-weight: bold;
 }
 
-#uploadPhoto {
+#submitPhoto {
 	display: flex;
 	justify-content: center;
-}
-#uploadPhoto input {
 	width: 50%;
 	height: 50px;
 	font-size: 1.2em;
@@ -505,3 +503,4 @@ footer nav ul {
 	box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.09);
 	cursor: pointer;
 }
+
