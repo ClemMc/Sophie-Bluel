@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token') ? localStorage.getItem('token') : false;
-    console.log('Token:', token);
     await init();
 
     if (token) {
@@ -11,11 +10,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function init() {
     const works = await fetchWorks();
-    console.log('Works:', works);
     generateGallery(works);
 
     const categories = await fetchCategories();
-    console.log('Categories:', categories);
     setupFilterButtons(categories, works);
 }
 
@@ -67,7 +64,6 @@ function setupFilterButtons(categories, works) {
         divFilter.appendChild(filterBtn);
     });
 
-    console.log('Filter buttons set up.');
 }
 
 function editMode() {
@@ -157,8 +153,7 @@ async function openModal() {
         button.addEventListener('click', async (event) => {
             const photoId = event.currentTarget.dataset.id;
             await deletePhoto(photoId);
-            document.querySelector(`.miniature[data-id="${photoId}"]`).remove();
-            document.querySelector(`.gallery[data-id="${photoId}"]`).remove();
+            removePhotoFromDOM(photoId);
         });
     });
 }
@@ -235,70 +230,68 @@ function openAddPhotoModal() {
 
     document.querySelector('#filetoUpload').addEventListener('change', imagePreview);
     
-    document.querySelector('#uploadPhoto').addEventListener('submit', async (event) => {
-        event.preventDefault();
-    
-        const errorImg = document.getElementById('errorImg');
-        const errorTitleSubmit = document.getElementById('ErrorTitleSubmit');
-        const errorCategorySubmit = document.getElementById('ErrorCategorySubmit');
-    
-        if (errorImg) {
-            errorImg.textContent = '';
-        }
+document.querySelector('#uploadPhoto').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const errorImg = document.getElementById('errorImg');
+    const errorTitleSubmit = document.getElementById('ErrorTitleSubmit');
+    const errorCategorySubmit = document.getElementById('ErrorCategorySubmit');
+
+    if (errorImg) {
+        errorImg.textContent = '';
+    }
+    if (errorTitleSubmit) {
+        errorTitleSubmit.textContent = '';
+    }
+    if (errorCategorySubmit) {
+        errorCategorySubmit.textContent = '';
+    }
+
+    const title = document.querySelector('#title').value;
+    const category = document.querySelector('#category').value;
+    const image = file ? file : null;
+    let valid = true;
+
+    if (!title) {
         if (errorTitleSubmit) {
-            errorTitleSubmit.textContent = '';
+            errorTitleSubmit.textContent = 'Veuillez saisir un titre.';
         }
+        valid = false;
+    }
+
+    if (!category) {
         if (errorCategorySubmit) {
-            errorCategorySubmit.textContent = '';
+            errorCategorySubmit.textContent = 'Veuillez sélectionner une catégorie.';
         }
-    
-        const title = document.querySelector('#title').value;
-        const category = document.querySelector('#category').value;
-        const fileInput = document.querySelector('#filetoUpload');
-        const image = fileInput ? fileInput.files[0] : null;
-        console.log(fileInput)
-        let valid = true;
-    
-        if (!title) {
-            if (errorTitleSubmit) {
-                errorTitleSubmit.textContent = 'Veuillez saisir un titre.';
-            }
-            valid = false;
+        valid = false;
+    }
+
+    if (!image) {
+        if (errorImg) {
+            errorImg.textContent = 'Veuillez sélectionner une image.';
         }
-    
-        if (!category) {
-            if (errorCategorySubmit) {
-                errorCategorySubmit.textContent = 'Veuillez sélectionner une catégorie.';
-            }
-            valid = false;
-        }
-    
-        if (!image) {
-            if (errorImg) {
-                errorImg.textContent = 'Veuillez sélectionner une image.';
-            }
-            valid = false;
-        }
-    
-        if (!valid) {
-            return;
-        }
-    
-        await addPhoto({ title, category, image });
-    
-        const addPhotoModal = document.getElementById('addPhotoModal');
-        if (addPhotoModal) {
-            addPhotoModal.style.display = 'none';
-            document.body.removeChild(addPhotoModal);
-        }
-    });
+        valid = false;
+    }
+
+    if (!valid) {
+        return;
+    }
+
+    await addPhoto({ title, category, image });
+
+    const addPhotoModal = document.getElementById('addPhotoModal');
+    if (addPhotoModal) {
+        addPhotoModal.style.display = 'none';
+        document.body.removeChild(addPhotoModal);
+    }
+});
     
     
 }
 
-
+let file;
 function imagePreview(event) {
-    const file = event.target.files[0];
+    file = event.target.files[0];
     const previewContainer = document.getElementById('previewContainer');
     const inputFile = document.getElementById('inputFile');
     const fileSizeInfo = document.querySelector('.filesize');
@@ -348,7 +341,6 @@ async function addPhoto(photoData) {
     formData.append('title', photoData.title);
     formData.append('category', photoData.category);
     formData.append('image', photoData.image);
-    console.log('formData')
     try {
         const response = await fetch('http://localhost:5678/api/works', {
             method: 'POST',
@@ -371,6 +363,17 @@ async function addPhoto(photoData) {
     }
 }
 
+function insertPhotoIntoDOM(work) {
+    const gallery = document.querySelector(".gallery");
+    const figure = document.createElement('figure');
+    figure.setAttribute('data-id', work.id);
+    figure.innerHTML = `
+        <img src="${work.imageUrl}" alt="${work.title}">
+        <figcaption>${work.title}</figcaption>
+    `;
+    gallery.appendChild(figure);
+}
+
 async function deletePhoto(photoId) {
     try {
         const response = await fetch(`http://localhost:5678/api/works/${photoId}`, {
@@ -381,6 +384,7 @@ async function deletePhoto(photoId) {
         });
 
         if (response.ok) {
+            removePhotoFromDOM(photoId);
         } else {
             console.error(`Erreur lors de la suppression de la photo ${photoId}`);
             const errorMsg = await response.text();
@@ -388,5 +392,17 @@ async function deletePhoto(photoId) {
         }
     } catch (error) {
         console.error('Erreur de connexion:', error);
+    }
+}
+
+function removePhotoFromDOM(photoId) {
+    const photoMiniature = document.querySelector(`.miniature[data-id="${photoId}"]`);
+    if (photoMiniature) {
+        photoMiniature.remove();
+    }
+
+    const galleryItem = document.querySelector(`.gallery figure[data-id="${photoId}"]`);
+    if (galleryItem) {
+        galleryItem.remove();
     }
 }
