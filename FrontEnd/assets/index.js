@@ -353,6 +353,8 @@ async function addPhoto(photoData) {
         if (response.ok) {
             const works = await fetchWorks();
             generateGallery(works);
+            const data = await response.json()
+            addWorkToModal(data)
         } else {
             console.error('Erreur lors de l\'ajout de la photo');
             const errorMsg = await response.text();
@@ -361,6 +363,26 @@ async function addPhoto(photoData) {
     } catch (error) {
         console.error('Erreur de connexion:', error);
     }
+}
+function addWorkToModal(work) {
+    const photoList = document.querySelector('#photoList');
+    const miniature = document.createElement('div');
+    miniature.classList.add('miniature');
+    miniature.dataset.id = work.id;
+    miniature.innerHTML = `
+        <img src="${work.imageUrl}" alt="${work.title}">
+        <button class="delete-photo" data-id="${work.id}">
+            <i class="fa fa-trash"></i>
+        </button>
+    `;
+
+    photoList.appendChild(miniature);
+    // addeventlistener to delete photo
+    miniature.querySelector('.delete-photo').addEventListener('click', async (event) => {
+        const photoId = event.currentTarget.dataset.id;
+        await deletePhoto(photoId);
+        removePhotoFromDOM(photoId);
+    });
 }
 
 function insertPhotoIntoDOM(work) {
