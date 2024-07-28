@@ -377,7 +377,6 @@ function addWorkToModal(work) {
     `;
 
     photoList.appendChild(miniature);
-    // addeventlistener to delete photo
     miniature.querySelector('.delete-photo').addEventListener('click', async (event) => {
         const photoId = event.currentTarget.dataset.id;
         await deletePhoto(photoId);
